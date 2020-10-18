@@ -1,0 +1,2 @@
+echo $EUID
+id -u

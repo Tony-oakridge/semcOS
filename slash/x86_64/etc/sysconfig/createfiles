@@ -25,4 +25,7 @@
 # 		<major> and <minor> are the major and minor numbers used for the device.
 ########################################################################
 
+/tmp/.ICE-unix dir 1777 root root
+/tmp/.X11-unix dir 1777 root root
+
 # End /etc/sysconfig/createfiles
