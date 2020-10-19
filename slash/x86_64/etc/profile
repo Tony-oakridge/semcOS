@@ -1,7 +1,7 @@
 export PATH=/bin:/usr/bin
 
 if [ `id -u` -eq 0 ] ; then
-        PATH=/bin:/sbin:/usr/bin:/usr/sbin
+        PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
         unset HISTFILE
 fi
 
@@ -14,3 +14,4 @@ export HISTSIZE=1000
 export HISTFILESIZE=1000
 export PAGER='/bin/more '
 export EDITOR='/bin/vi'
+export CC=distcc
