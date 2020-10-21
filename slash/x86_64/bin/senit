@@ -1,0 +1,106 @@
+#![allow(dead_code, mutable_transmutes, non_camel_case_types, non_snake_case,
+         non_upper_case_globals, unused_assignments, unused_mut)]
+#![register_tool(c2rust)]
+#![feature(main, register_tool)]
+extern "C" {
+    #[no_mangle]
+    fn sigfillset(__set: *mut sigset_t) -> libc::c_int;
+    #[no_mangle]
+    fn sigprocmask(__how: libc::c_int, __set: *const sigset_t,
+                   __oset: *mut sigset_t) -> libc::c_int;
+    #[no_mangle]
+    fn sigwait(__set: *const sigset_t, __sig: *mut libc::c_int)
+     -> libc::c_int;
+    #[no_mangle]
+    fn waitpid(__pid: __pid_t, __stat_loc: *mut libc::c_int,
+               __options: libc::c_int) -> __pid_t;
+    #[no_mangle]
+    fn alarm(__seconds: libc::c_uint) -> libc::c_uint;
+    #[no_mangle]
+    fn chdir(__path: *const libc::c_char) -> libc::c_int;
+    #[no_mangle]
+    fn getpid() -> __pid_t;
+}
+pub type __pid_t = libc::c_int;
+pub type size_t = libc::c_ulong;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct __sigset_t {
+    pub __val: [libc::c_ulong; 16],
+}
+pub type sigset_t = __sigset_t;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct C2RustUnnamed {
+    pub sig: libc::c_int,
+    pub handler: Option<unsafe extern "C" fn() -> ()>,
+}
+static mut sigmap: [C2RustUnnamed; 4] =
+    unsafe {
+        [{
+             let mut init =
+                 C2RustUnnamed{sig: 10 as libc::c_int,
+                               handler:
+                                   Some(sigpoweroff as
+                                            unsafe extern "C" fn() -> ()),};
+             init
+         },
+         {
+             let mut init =
+                 C2RustUnnamed{sig: 17 as libc::c_int,
+                               handler:
+                                   Some(sigreap as
+                                            unsafe extern "C" fn() -> ()),};
+             init
+         },
+         {
+             let mut init =
+                 C2RustUnnamed{sig: 14 as libc::c_int,
+                               handler:
+                                   Some(sigreap as
+                                            unsafe extern "C" fn() -> ()),};
+             init
+         },
+         {
+             let mut init =
+                 C2RustUnnamed{sig: 2 as libc::c_int,
+                               handler:
+                                   Some(sigreboot as
+                                            unsafe extern "C" fn() -> ()),};
+             init
+         }]
+    };
+static mut set: sigset_t = sigset_t{__val: [0; 16],};
+unsafe fn main_0() -> libc::c_int {
+    let mut sig: libc::c_int = 0;
+    let mut i: size_t = 0;
+    if getpid() != 1 as libc::c_int { return 1 as libc::c_int }
+    chdir(b"/\x00" as *const u8 as *const libc::c_char);
+    sigfillset(&mut set);
+    sigprocmask(0 as libc::c_int, &mut set, 0 as *mut sigset_t);
+    loop  {
+        alarm(30 as libc::c_int as libc::c_uint);
+        sigwait(&mut set, &mut sig);
+        i = 0 as libc::c_int as size_t;
+        while i <
+                  (::std::mem::size_of::<[C2RustUnnamed; 4]>() as
+                       libc::c_ulong).wrapping_div(::std::mem::size_of::<C2RustUnnamed>()
+                                                       as libc::c_ulong) {
+            if sigmap[i as usize].sig == sig {
+                sigmap[i as
+                           usize].handler.expect("non-null function pointer")();
+                break ;
+            } else { i = i.wrapping_add(1) }
+        }
+    };
+}
+unsafe extern "C" fn sigpoweroff() { }
+unsafe extern "C" fn sigreap() {
+    while waitpid(-(1 as libc::c_int), 0 as *mut libc::c_int,
+                  1 as libc::c_int) > 0 as libc::c_int {
+    }
+    alarm(30 as libc::c_int as libc::c_uint);
+}
+unsafe extern "C" fn sigreboot() { }
+#[main]
+pub fn main() { unsafe { ::std::process::exit(main_0() as i32) } }
